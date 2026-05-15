@@ -85,10 +85,9 @@
                 return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             };
 
-            // 🔥 INTELIGÊNCIA MATEMÁTICA DOS CARDS
             const leadsReais = leads.filter(l => !String(l.id || l.TELEFONE || "").toLowerCase().includes("group"));
             const totalGeral = leadsReais.length;
-            const totalCompletos = leadsReais.filter(l => l.LINK_FATURA && l.LINK_DOC_FRENTE).length;
+            const totalCompletos = leadsReais.filter(l => l.LINK_FATURA && l.LINK_DOC_FRENTE && l.STATUS_CADASTRO !== 'INATIVO').length;
             const totalPendentes = totalGeral - totalCompletos;
 
             const filtrados = leadsReais.filter(l => {
@@ -138,11 +137,10 @@
                         </div>
                     </header>
 
-                    {/* 🔥 CARDS DE INDICADORES (KPIs) */}
                     <div className="max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total de Clientes</p>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total de Cadastros</p>
                                 <h2 className="text-4xl font-black text-slate-800">{loading ? "-" : totalGeral}</h2>
                             </div>
                             <div className="bg-slate-50 text-slate-400 p-4 rounded-xl text-2xl"><i className="fas fa-users"></i></div>
@@ -196,19 +194,21 @@
                                         <tr><td colSpan="17" className="p-8 text-center text-slate-400">Nenhum dado encontrado no banco.</td></tr>
                                     ) : (
                                         filtrados.map((lead) => (
-                                            <tr key={lead.id} className="hover:bg-emerald-50 text-[11px] text-slate-700 bg-white">
-                                                <td className="p-3 sticky left-0 bg-white shadow-[1px_0_0_#f1f5f9] text-center">
+                                            <tr key={lead.id} className={`hover:bg-emerald-50 text-[11px] text-slate-700 ${lead.STATUS_CADASTRO === 'INATIVO' ? 'bg-slate-50 opacity-70' : 'bg-white'}`}>
+                                                <td className="p-3 sticky left-0 shadow-[1px_0_0_#f1f5f9] text-center" style={{ backgroundColor: 'inherit' }}>
                                                     <button onClick={() => setLeadToDelete(lead)} className="text-red-500 hover:text-white bg-red-50 hover:bg-red-500 p-2 rounded-lg transition-colors shadow-sm" title="Excluir Definitivamente"><i className="fas fa-trash-alt"></i></button>
                                                 </td>
                                                 <td className="p-3 font-mono font-bold text-[9px] text-slate-500">{formatDate(lead.DATA_PROCESSAMENTO || lead.data_criacao || lead.DATA_ULTIMA_ATUALIZACAO)}</td>
                                                 <td className="p-3">
-                                                    {lead.LINK_FATURA && lead.LINK_DOC_FRENTE
+                                                    {lead.STATUS_CADASTRO === 'INATIVO'
+                                                        ? <span className="bg-slate-200 text-slate-500 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-user-slash mr-1"></i> INATIVO</span>
+                                                        : lead.LINK_FATURA && lead.LINK_DOC_FRENTE
                                                         ? <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-check mr-1"></i> 100% COMPLETO</span>
                                                         : <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-clock mr-1"></i> PENDENTE</span>
                                                     }
                                                 </td>
                                                 <td className="p-3 font-bold text-emerald-700 bg-emerald-50/50">{lead.CODIGO_CLIENTE || "-"}</td>
-                                                <td className="p-3 font-bold text-slate-900">{lead.NOME_CLIENTE || "-"}</td>
+                                                <td className={`p-3 font-bold ${lead.STATUS_CADASTRO === 'INATIVO' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{lead.NOME_CLIENTE || "-"}</td>
                                                 <td className="p-3 font-mono font-bold text-slate-600">{lead.DATA_NASCIMENTO || "-"}</td>
                                                 <td className="p-3 font-mono text-slate-600">{lead.CPF || "-"}</td>
                                                 <td className="p-3 font-mono text-blue-600">{lead.TELEFONE || lead.telefone || "-"}</td>
@@ -236,4 +236,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+</html>    

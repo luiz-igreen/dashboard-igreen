@@ -47,7 +47,6 @@
         function App() {
             const [leads, setLeads] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [activeTab, setActiveTab] = useState('AUDITORIA_IGREEN'); 
             const [searchTerm, setSearchTerm] = useState("");
             const [leadToDelete, setLeadToDelete] = useState(null);
 
@@ -86,78 +85,16 @@
                 return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             };
 
-            const filtrados = leads.filter(l => {
-                const isGroup = String(l.id || l.TELEFONE || l.telefone || "").toLowerCase().includes("group");
-                if (isGroup) return false;
+            // 🔥 INTELIGÊNCIA MATEMÁTICA DOS CARDS
+            const leadsReais = leads.filter(l => !String(l.id || l.TELEFONE || "").toLowerCase().includes("group"));
+            const totalGeral = leadsReais.length;
+            const totalCompletos = leadsReais.filter(l => l.LINK_FATURA && l.LINK_DOC_FRENTE).length;
+            const totalPendentes = totalGeral - totalCompletos;
+
+            const filtrados = leadsReais.filter(l => {
                 return (l.NOME_CLIENTE || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
                 (l.TELEFONE || "").includes(searchTerm) || (l.UC || "").includes(searchTerm) || (l.CODIGO_CLIENTE || "").includes(searchTerm)
             });
-
-            const renderAuditoria = () => (
-                <div className="overflow-x-auto pb-4">
-                    <table className="w-full text-left whitespace-nowrap">
-                        <thead>
-                            <tr className="bg-slate-100 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600">
-                                <th className="p-3 sticky left-0 bg-slate-200 z-10 shadow-[1px_0_0_#cbd5e1]">AÇÕES</th>
-                                <th className="p-3">DATA</th>
-                                <th className="p-3">STATUS</th>
-                                <th className="p-3 text-emerald-700 bg-emerald-50">CÓDIGO</th>
-                                <th className="p-3">NOME_CLIENTE</th>
-                                <th className="p-3">DATA_NASCIMENTO</th>
-                                <th className="p-3">CPF</th>
-                                <th className="p-3">TELEFONE</th>
-                                <th className="p-3">EMAIL</th>
-                                <th className="p-3">CEP</th>
-                                <th className="p-3">UC</th>
-                                <th className="p-3 text-center bg-blue-50 text-blue-800 border-l border-blue-100">CONTA_MES</th>
-                                <th className="p-3 text-center bg-red-50 text-red-800 border-r border-red-100">VENCIMENTO</th>
-                                <th className="p-3 text-center">MEDIA_CONSUMO</th>
-                                <th className="p-3 text-center">LINK_FATURA</th>
-                                <th className="p-3 text-center">DOC_FRENTE</th>
-                                <th className="p-3 text-center">DOC_VERSO</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {loading ? (
-                                <tr><td colSpan="17" className="p-8 text-center font-bold text-emerald-600"><i className="fas fa-spinner fa-spin mr-2"></i> Carregando dados reais...</td></tr>
-                            ) : filtrados.length === 0 ? (
-                                <tr><td colSpan="17" className="p-8 text-center text-slate-400">Nenhum dado encontrado no banco.</td></tr>
-                            ) : (
-                                filtrados.map((lead) => (
-                                    <tr key={lead.id} className="hover:bg-emerald-50 text-[11px] text-slate-700 bg-white">
-                                        <td className="p-3 sticky left-0 bg-white shadow-[1px_0_0_#f1f5f9] text-center">
-                                            <button onClick={() => setLeadToDelete(lead)} className="text-red-500 hover:text-white bg-red-50 hover:bg-red-500 p-2 rounded-lg transition-colors shadow-sm" title="Excluir Definitivamente"><i className="fas fa-trash-alt"></i></button>
-                                        </td>
-                                        <td className="p-3 font-mono font-bold text-[9px] text-slate-500">{formatDate(lead.DATA_PROCESSAMENTO || lead.data_criacao)}</td>
-                                        <td className="p-3">
-                                            {lead.STATUS_CADASTRO === 'CONCLUIDO' || lead.status === 'CONCLUIDO'
-                                                ? <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-check mr-1"></i> CONCLUÍDO</span>
-                                                : lead.STATUS_CADASTRO === 'ATUALIZADO'
-                                                ? <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-sync-alt mr-1"></i> ATUALIZADO</span>
-                                                : <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold text-[9px]">{lead.STATUS_CADASTRO || "NOVO"}</span>
-                                            }
-                                        </td>
-                                        <td className="p-3 font-bold text-emerald-700 bg-emerald-50/50">{lead.CODIGO_CLIENTE || "-"}</td>
-                                        <td className="p-3 font-bold text-slate-900">{lead.NOME_CLIENTE || "-"}</td>
-                                        <td className="p-3 font-mono font-bold text-slate-600">{lead.DATA_NASCIMENTO || "-"}</td>
-                                        <td className="p-3 font-mono text-slate-600">{lead.CPF || "-"}</td>
-                                        <td className="p-3 font-mono text-blue-600">{lead.TELEFONE || lead.telefone || "-"}</td>
-                                        <td className="p-3 font-bold text-blue-600 text-[10px]">{lead.EMAIL || "-"}</td>
-                                        <td className="p-3 font-mono text-slate-500">{lead.CEP || "-"}</td>
-                                        <td className="p-3 font-bold text-indigo-600">{lead.UC || "-"}</td>
-                                        <td className="p-3 text-center font-bold text-blue-700 bg-blue-50/30 uppercase">{lead.CONTA_MES || "-"}</td>
-                                        <td className="p-3 text-center font-bold text-red-600 bg-red-50/30">{lead.VENCIMENTO || "-"}</td>
-                                        <td className="p-3 text-center font-black text-emerald-600 text-sm bg-emerald-50">{lead.MEDIA_CONSUMO || "0"}</td>
-                                        <td className="p-3 text-center">{lead.LINK_FATURA ? <a href={lead.LINK_FATURA} target="_blank" className="text-blue-500 hover:text-blue-700"><i className="fas fa-file-pdf"></i></a> : "-"}</td>
-                                        <td className="p-3 text-center">{lead.LINK_DOC_FRENTE ? <a href={lead.LINK_DOC_FRENTE} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card"></i></a> : "-"}</td>
-                                        <td className="p-3 text-center">{lead.LINK_DOC_VERSO ? <a href={lead.LINK_DOC_VERSO} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card"></i></a> : "-"}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            );
 
             return (
                 <div className="min-h-screen p-4 md:p-8 relative">
@@ -188,7 +125,7 @@
                                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">Cloud Database <span className="text-emerald-600">iGreen AutoFlow</span></h1>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center mt-1">
                                     <i className="fas fa-circle text-emerald-500 mr-2 animate-pulse" style={{fontSize: '8px'}}></i>
-                                    SISTEMA OFICIAL DE PRODUÇÃO
+                                    PAINEL DO LICENCIADO
                                 </p>
                             </div>
                         </div>
@@ -201,8 +138,95 @@
                         </div>
                     </header>
 
+                    {/* 🔥 CARDS DE INDICADORES (KPIs) */}
+                    <div className="max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total de Clientes</p>
+                                <h2 className="text-4xl font-black text-slate-800">{loading ? "-" : totalGeral}</h2>
+                            </div>
+                            <div className="bg-slate-50 text-slate-400 p-4 rounded-xl text-2xl"><i className="fas fa-users"></i></div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-6 border border-emerald-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">100% Completos</p>
+                                <h2 className="text-4xl font-black text-emerald-700">{loading ? "-" : totalCompletos}</h2>
+                            </div>
+                            <div className="bg-emerald-50 text-emerald-500 p-4 rounded-xl text-2xl"><i className="fas fa-shield-check"></i></div>
+                        </div>
+
+                        <div className="bg-white rounded-2xl p-6 border border-amber-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Incompletos / Pendentes</p>
+                                <h2 className="text-4xl font-black text-amber-700">{loading ? "-" : totalPendentes}</h2>
+                            </div>
+                            <div className="bg-amber-50 text-amber-500 p-4 rounded-xl text-2xl"><i className="fas fa-clock"></i></div>
+                        </div>
+                    </div>
+
                     <main className="max-w-[1800px] mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
-                        {activeTab === 'AUDITORIA_IGREEN' && renderAuditoria()}
+                        <div className="overflow-x-auto pb-4">
+                            <table className="w-full text-left whitespace-nowrap">
+                                <thead>
+                                    <tr className="bg-slate-100 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600">
+                                        <th className="p-3 sticky left-0 bg-slate-200 z-10 shadow-[1px_0_0_#cbd5e1]">AÇÕES</th>
+                                        <th className="p-3">DATA</th>
+                                        <th className="p-3">STATUS</th>
+                                        <th className="p-3 text-emerald-700 bg-emerald-50">CÓDIGO</th>
+                                        <th className="p-3">NOME_CLIENTE</th>
+                                        <th className="p-3">DATA_NASCIMENTO</th>
+                                        <th className="p-3">CPF</th>
+                                        <th className="p-3">TELEFONE</th>
+                                        <th className="p-3">EMAIL</th>
+                                        <th className="p-3">CEP</th>
+                                        <th className="p-3">UC</th>
+                                        <th className="p-3 text-center bg-blue-50 text-blue-800 border-l border-blue-100">CONTA_MES</th>
+                                        <th className="p-3 text-center bg-red-50 text-red-800 border-r border-red-100">VENCIMENTO</th>
+                                        <th className="p-3 text-center">MEDIA_CONSUMO</th>
+                                        <th className="p-3 text-center">LINK_FATURA</th>
+                                        <th className="p-3 text-center">DOC_FRENTE</th>
+                                        <th className="p-3 text-center">DOC_VERSO</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {loading ? (
+                                        <tr><td colSpan="17" className="p-8 text-center font-bold text-emerald-600"><i className="fas fa-spinner fa-spin mr-2"></i> Carregando dados reais...</td></tr>
+                                    ) : filtrados.length === 0 ? (
+                                        <tr><td colSpan="17" className="p-8 text-center text-slate-400">Nenhum dado encontrado no banco.</td></tr>
+                                    ) : (
+                                        filtrados.map((lead) => (
+                                            <tr key={lead.id} className="hover:bg-emerald-50 text-[11px] text-slate-700 bg-white">
+                                                <td className="p-3 sticky left-0 bg-white shadow-[1px_0_0_#f1f5f9] text-center">
+                                                    <button onClick={() => setLeadToDelete(lead)} className="text-red-500 hover:text-white bg-red-50 hover:bg-red-500 p-2 rounded-lg transition-colors shadow-sm" title="Excluir Definitivamente"><i className="fas fa-trash-alt"></i></button>
+                                                </td>
+                                                <td className="p-3 font-mono font-bold text-[9px] text-slate-500">{formatDate(lead.DATA_PROCESSAMENTO || lead.data_criacao || lead.DATA_ULTIMA_ATUALIZACAO)}</td>
+                                                <td className="p-3">
+                                                    {lead.LINK_FATURA && lead.LINK_DOC_FRENTE
+                                                        ? <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-check mr-1"></i> 100% COMPLETO</span>
+                                                        : <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-clock mr-1"></i> PENDENTE</span>
+                                                    }
+                                                </td>
+                                                <td className="p-3 font-bold text-emerald-700 bg-emerald-50/50">{lead.CODIGO_CLIENTE || "-"}</td>
+                                                <td className="p-3 font-bold text-slate-900">{lead.NOME_CLIENTE || "-"}</td>
+                                                <td className="p-3 font-mono font-bold text-slate-600">{lead.DATA_NASCIMENTO || "-"}</td>
+                                                <td className="p-3 font-mono text-slate-600">{lead.CPF || "-"}</td>
+                                                <td className="p-3 font-mono text-blue-600">{lead.TELEFONE || lead.telefone || "-"}</td>
+                                                <td className="p-3 font-bold text-blue-600 text-[10px]">{lead.EMAIL || "-"}</td>
+                                                <td className="p-3 font-mono text-slate-500">{lead.CEP || "-"}</td>
+                                                <td className="p-3 font-bold text-indigo-600">{lead.UC || "-"}</td>
+                                                <td className="p-3 text-center font-bold text-blue-700 bg-blue-50/30 uppercase">{lead.CONTA_MES || "-"}</td>
+                                                <td className="p-3 text-center font-bold text-red-600 bg-red-50/30">{lead.VENCIMENTO || "-"}</td>
+                                                <td className="p-3 text-center font-black text-emerald-600 text-sm bg-emerald-50">{lead.MEDIA_CONSUMO || "0"}</td>
+                                                <td className="p-3 text-center">{lead.LINK_FATURA ? <a href={lead.LINK_FATURA} target="_blank" className="text-blue-500 hover:text-blue-700"><i className="fas fa-file-pdf text-lg"></i></a> : "-"}</td>
+                                                <td className="p-3 text-center">{lead.LINK_DOC_FRENTE ? <a href={lead.LINK_DOC_FRENTE} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card text-lg"></i></a> : "-"}</td>
+                                                <td className="p-3 text-center">{lead.LINK_DOC_VERSO ? <a href={lead.LINK_DOC_VERSO} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card text-lg"></i></a> : "-"}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </main>
                 </div>
             );

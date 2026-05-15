@@ -6,7 +6,6 @@
     <title>iGreen AutoFlow - Dashboard Oficial</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -48,17 +47,15 @@
         function App() {
             const [leads, setLeads] = useState([]);
             const [loading, setLoading] = useState(true);
-            const [activeTab, setActiveTab] = useState('AUDITORIA_IGREEN'); // Abas: AUDITORIA_IGREEN, FILA_RPA_IGREEN, HISTORICO_VOZ
+            const [activeTab, setActiveTab] = useState('AUDITORIA_IGREEN'); 
             const [searchTerm, setSearchTerm] = useState("");
             const [leadToDelete, setLeadToDelete] = useState(null);
 
             useEffect(() => {
                 auth.signInAnonymously().catch(console.error);
-
                 const unsubscribeAuth = auth.onAuthStateChanged(user => {
                     if (user) {
                         const leadsRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('leads');
-                        
                         const unsubscribeDb = leadsRef.onSnapshot(snapshot => {
                             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                             data.sort((a,b) => (b.DATA_PROCESSAMENTO?.seconds || 0) - (a.DATA_PROCESSAMENTO?.seconds || 0));
@@ -68,7 +65,6 @@
                             console.error("Erro DB:", err);
                             setLoading(false);
                         });
-
                         return () => unsubscribeDb();
                     }
                 });
@@ -80,194 +76,81 @@
                 try {
                     await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('leads').doc(leadToDelete.id).delete();
                     setLeadToDelete(null); 
-                } catch (error) {
-                    console.error("Erro ao deletar lead:", error);
-                    alert("Houve um erro ao tentar excluir o cadastro.");
-                }
+                } catch (error) { alert("Houve um erro ao tentar excluir o cadastro."); }
             };
 
             const formatDate = (timestamp) => {
                 if (!timestamp) return "-";
                 const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp.seconds * 1000 || timestamp);
                 if (isNaN(date.getTime())) return "-";
-                return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             };
 
             const filtrados = leads.filter(l => {
                 const isGroup = String(l.id || l.TELEFONE || l.telefone || "").toLowerCase().includes("group");
                 if (isGroup) return false;
-
-                return (l.NOME_CLIENTE || l.nome_cliente || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-                (l.TELEFONE || l.telefone || "").includes(searchTerm) ||
-                (l.UC || "").includes(searchTerm) ||
-                (l.CODIGO_CLIENTE || "").includes(searchTerm)
+                return (l.NOME_CLIENTE || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+                (l.TELEFONE || "").includes(searchTerm) || (l.UC || "").includes(searchTerm) || (l.CODIGO_CLIENTE || "").includes(searchTerm)
             });
 
-            // ABA 1: AUDITORIA IGREEN
             const renderAuditoria = () => (
                 <div className="overflow-x-auto pb-4">
                     <table className="w-full text-left whitespace-nowrap">
                         <thead>
                             <tr className="bg-slate-100 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600">
                                 <th className="p-3 sticky left-0 bg-slate-200 z-10 shadow-[1px_0_0_#cbd5e1]">AÇÕES</th>
-                                <th className="p-3">DATA_PROCESSAMENTO</th>
-                                <th className="p-3">STATUS_CADASTRO</th>
-                                <th className="p-3">TELEFONE</th>
+                                <th className="p-3">DATA</th>
+                                <th className="p-3">STATUS</th>
                                 <th className="p-3 text-emerald-700 bg-emerald-50">CÓDIGO</th>
                                 <th className="p-3">NOME_CLIENTE</th>
+                                <th className="p-3">DATA_NASCIMENTO</th>
                                 <th className="p-3">CPF</th>
-                                <th className="p-3 text-center bg-blue-50 text-blue-800 border-l border-blue-100">CONTA_MES</th>
-                                <th className="p-3 text-center bg-red-50 text-red-800 border-r border-red-100">VENCIMENTO</th>
+                                <th className="p-3">TELEFONE</th>
                                 <th className="p-3">EMAIL</th>
                                 <th className="p-3">CEP</th>
                                 <th className="p-3">UC</th>
+                                <th className="p-3 text-center bg-blue-50 text-blue-800 border-l border-blue-100">CONTA_MES</th>
+                                <th className="p-3 text-center bg-red-50 text-red-800 border-r border-red-100">VENCIMENTO</th>
                                 <th className="p-3 text-center">MEDIA_CONSUMO</th>
                                 <th className="p-3 text-center">LINK_FATURA</th>
-                                <th className="p-3 text-center">LINK_DOC_FRENTE</th>
-                                <th className="p-3 text-center">LINK_DOC_VERSO</th>
+                                <th className="p-3 text-center">DOC_FRENTE</th>
+                                <th className="p-3 text-center">DOC_VERSO</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
-                                <tr><td colSpan="16" className="p-8 text-center font-bold text-emerald-600"><i className="fas fa-spinner fa-spin mr-2"></i> Carregando dados reais...</td></tr>
+                                <tr><td colSpan="17" className="p-8 text-center font-bold text-emerald-600"><i className="fas fa-spinner fa-spin mr-2"></i> Carregando dados reais...</td></tr>
                             ) : filtrados.length === 0 ? (
-                                <tr><td colSpan="16" className="p-8 text-center text-slate-400">Nenhum dado encontrado no banco.</td></tr>
+                                <tr><td colSpan="17" className="p-8 text-center text-slate-400">Nenhum dado encontrado no banco.</td></tr>
                             ) : (
                                 filtrados.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-emerald-50 text-[11px] text-slate-700 bg-white">
                                         <td className="p-3 sticky left-0 bg-white shadow-[1px_0_0_#f1f5f9] text-center">
                                             <button onClick={() => setLeadToDelete(lead)} className="text-red-500 hover:text-white bg-red-50 hover:bg-red-500 p-2 rounded-lg transition-colors shadow-sm" title="Excluir Definitivamente"><i className="fas fa-trash-alt"></i></button>
                                         </td>
-                                        <td className="p-3 font-mono font-bold">{formatDate(lead.DATA_PROCESSAMENTO || lead.data_criacao)}</td>
+                                        <td className="p-3 font-mono font-bold text-[9px] text-slate-500">{formatDate(lead.DATA_PROCESSAMENTO || lead.data_criacao)}</td>
                                         <td className="p-3">
                                             {lead.STATUS_CADASTRO === 'CONCLUIDO' || lead.status === 'CONCLUIDO'
-                                                ? <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold"><i className="fas fa-check-circle mr-1"></i> CONCLUÍDO</span>
+                                                ? <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-check mr-1"></i> CONCLUÍDO</span>
                                                 : lead.STATUS_CADASTRO === 'ATUALIZADO'
-                                                ? <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold"><i className="fas fa-sync-alt mr-1"></i> ATUALIZADO</span>
-                                                : <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold">{lead.STATUS_CADASTRO || "NOVO"}</span>
+                                                ? <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-bold text-[9px]"><i className="fas fa-sync-alt mr-1"></i> ATUALIZADO</span>
+                                                : <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-md font-bold text-[9px]">{lead.STATUS_CADASTRO || "NOVO"}</span>
                                             }
                                         </td>
-                                        <td className="p-3 font-mono text-slate-600">{lead.TELEFONE || lead.telefone || "-"}</td>
                                         <td className="p-3 font-bold text-emerald-700 bg-emerald-50/50">{lead.CODIGO_CLIENTE || "-"}</td>
                                         <td className="p-3 font-bold text-slate-900">{lead.NOME_CLIENTE || "-"}</td>
+                                        <td className="p-3 font-mono font-bold text-slate-600">{lead.DATA_NASCIMENTO || "-"}</td>
                                         <td className="p-3 font-mono text-slate-600">{lead.CPF || "-"}</td>
+                                        <td className="p-3 font-mono text-blue-600">{lead.TELEFONE || lead.telefone || "-"}</td>
+                                        <td className="p-3 font-bold text-blue-600 text-[10px]">{lead.EMAIL || "-"}</td>
+                                        <td className="p-3 font-mono text-slate-500">{lead.CEP || "-"}</td>
+                                        <td className="p-3 font-bold text-indigo-600">{lead.UC || "-"}</td>
                                         <td className="p-3 text-center font-bold text-blue-700 bg-blue-50/30 uppercase">{lead.CONTA_MES || "-"}</td>
                                         <td className="p-3 text-center font-bold text-red-600 bg-red-50/30">{lead.VENCIMENTO || "-"}</td>
-                                        <td className="p-3 font-bold text-blue-600">{lead.EMAIL || "-"}</td>
-                                        <td className="p-3 font-mono">{lead.CEP || "-"}</td>
-                                        <td className="p-3 font-bold text-indigo-600">{lead.UC || "-"}</td>
                                         <td className="p-3 text-center font-black text-emerald-600 text-sm bg-emerald-50">{lead.MEDIA_CONSUMO || "0"}</td>
-                                        <td className="p-3 text-center">{lead.LINK_FATURA ? <a href={lead.LINK_FATURA} target="_blank" className="text-blue-500 hover:underline font-bold"><i className="fas fa-file-pdf"></i> Abrir</a> : "-"}</td>
-                                        <td className="p-3 text-center">{lead.LINK_DOC_FRENTE ? <a href={lead.LINK_DOC_FRENTE} target="_blank" className="text-orange-500 hover:underline font-bold"><i className="fas fa-id-card"></i> Frente</a> : "-"}</td>
-                                        <td className="p-3 text-center">{lead.LINK_DOC_VERSO ? <a href={lead.LINK_DOC_VERSO} target="_blank" className="text-orange-500 hover:underline font-bold"><i className="fas fa-id-card"></i> Verso</a> : "-"}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            );
-
-            // ABA 2: FILA RPA IGREEN
-            const renderFilaRPA = () => {
-                const filaPronta = filtrados.filter(l => l.STATUS_CADASTRO === 'CONCLUIDO' || l.STATUS_CADASTRO === 'ATUALIZADO');
-                return (
-                    <div className="overflow-x-auto pb-4">
-                        <div className="p-4 bg-blue-50 border-b border-blue-200 flex items-start mb-2">
-                            <i className="fas fa-robot text-blue-500 text-xl mr-3 mt-1"></i>
-                            <div>
-                                <h3 className="font-black text-blue-800 text-sm uppercase tracking-widest">Fila de Integração (Robô RPA)</h3>
-                                <p className="text-xs text-blue-600 mt-1">Dados validados pela IA prontos para injeção no portal.</p>
-                            </div>
-                        </div>
-
-                        <table className="w-full text-left whitespace-nowrap">
-                            <thead>
-                                <tr className="bg-slate-100 border-y border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-700">
-                                    <th className="p-3 sticky left-0 bg-slate-200 shadow-[1px_0_0_#cbd5e1] z-10">DATA_INTEGRACAO</th>
-                                    <th className="p-3 text-emerald-700">CÓDIGO</th>
-                                    <th className="p-3">NOME_CLIENTE</th>
-                                    <th className="p-3">DOCUMENTO_ID</th>
-                                    <th className="p-3 font-black text-blue-600">WHATSAPP</th>
-                                    <th className="p-3">EMAIL</th>
-                                    <th className="p-3">CEP</th>
-                                    <th className="p-3">UC_INSTALACAO</th>
-                                    <th className="p-3 text-center">CONSUMO_MEDIO</th>
-                                    <th className="p-3 text-center">DOC_FATURA</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {filaPronta.length === 0 ? (
-                                    <tr><td colSpan="10" className="p-8 text-center text-slate-400 font-bold">Nenhum cadastro pronto para injeção.</td></tr>
-                                ) : (
-                                    filaPronta.map(lead => (
-                                        <tr key={lead.id} className="hover:bg-blue-50 text-[11px] text-slate-700 bg-white">
-                                            <td className="p-3 font-mono font-bold text-slate-500 sticky left-0 bg-white shadow-[1px_0_0_#f1f5f9]">{formatDate(lead.DATA_PROCESSAMENTO)}</td>
-                                            <td className="p-3 font-bold text-emerald-700 bg-emerald-50/30">{lead.CODIGO_CLIENTE || "-"}</td>
-                                            <td className="p-3 font-bold text-blue-700">{lead.NOME_CLIENTE || "-"}</td>
-                                            <td className="p-3 font-mono text-slate-900">{lead.CPF || "-"}</td>
-                                            <td className="p-3 font-mono text-blue-600 font-bold">{lead.TELEFONE || "-"}</td>
-                                            <td className="p-3 font-mono">{lead.EMAIL || "-"}</td>
-                                            <td className="p-3 font-mono">{lead.CEP || "-"}</td>
-                                            <td className="p-3 font-black text-indigo-600">{lead.UC || "-"}</td>
-                                            <td className="p-3 text-center font-black text-emerald-600 bg-emerald-50">{lead.MEDIA_CONSUMO || 0}</td>
-                                            <td className="p-3 text-center">{lead.LINK_FATURA ? <a href={lead.LINK_FATURA} target="_blank" className="text-blue-500 hover:underline"><i className="fas fa-file-pdf"></i></a> : "-"}</td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                );
-            };
-
-            // ABA 3: HISTÓRICO VOZ
-            const renderHistoricoVoz = () => (
-                <div className="overflow-x-auto pb-4">
-                    <div className="p-4 bg-purple-50 border-b border-purple-200 flex items-start mb-2">
-                        <i className="fas fa-microphone-alt text-purple-500 text-xl mr-3 mt-1"></i>
-                        <div>
-                            <h3 className="font-black text-purple-800 text-sm uppercase tracking-widest">Acompanhamento de Interações (WhatsApp)</h3>
-                            <p className="text-xs text-purple-600 mt-1">Acompanhe em que etapa do funil (áudios e mensagens) cada cliente se encontra neste exato momento.</p>
-                        </div>
-                    </div>
-
-                    <table className="w-full text-left whitespace-nowrap">
-                        <thead>
-                            <tr className="bg-slate-100 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-600">
-                                <th className="p-3">ÚLTIMA INTERAÇÃO</th>
-                                <th className="p-3">TELEFONE (WHATSAPP)</th>
-                                <th className="p-3 text-emerald-700">CÓDIGO</th>
-                                <th className="p-3">NOME DO CLIENTE</th>
-                                <th className="p-3">STATUS DA CONVERSA (ETAPA ATUAL)</th>
-                                <th className="p-3 text-center">MODO</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {filtrados.length === 0 ? (
-                                <tr><td colSpan="6" className="p-8 text-center text-slate-400">Nenhuma interação registada.</td></tr>
-                            ) : (
-                                filtrados.map((lead) => (
-                                    <tr key={lead.id} className="hover:bg-purple-50 text-[11px] text-slate-700 bg-white">
-                                        <td className="p-3 font-mono font-bold text-slate-500">{formatDate(lead.DATA_PROCESSAMENTO)}</td>
-                                        <td className="p-3 font-mono font-bold text-blue-600">{lead.TELEFONE || "-"}</td>
-                                        <td className="p-3 font-bold text-emerald-700 bg-emerald-50/30">{lead.CODIGO_CLIENTE || "-"}</td>
-                                        <td className="p-3 font-bold text-slate-800">{lead.NOME_CLIENTE || "Aguardando identificação..."}</td>
-                                        <td className="p-3">
-                                            {lead.STATUS_CADASTRO === 'NOVO' || lead.STATUS_CADASTRO === 'AGUARDANDO_FATURA' ? <span className="text-amber-600 font-bold"><i className="fas fa-clock mr-1"></i> Aguardando envio da Fatura (Áudio 01)</span> :
-                                             lead.STATUS_CADASTRO === 'AGUARDANDO_DOC_FRENTE' ? <span className="text-blue-600 font-bold"><i className="fas fa-id-card mr-1"></i> Aguardando CNH Frente (Áudio 02/04)</span> :
-                                             lead.STATUS_CADASTRO === 'AGUARDANDO_DOC_VERSO' ? <span className="text-blue-600 font-bold"><i className="fas fa-id-card mr-1"></i> Aguardando CNH Verso (Áudio 05)</span> :
-                                             lead.STATUS_CADASTRO === 'AGUARDANDO_EMAIL' ? <span className="text-indigo-600 font-bold"><i className="fas fa-envelope mr-1"></i> Aguardando digitação do E-mail (Áudio 06/07)</span> :
-                                             lead.STATUS_CADASTRO === 'CONCLUIDO' ? <span className="text-emerald-600 font-black"><i className="fas fa-check-double mr-1"></i> Finalizado! Contrato enviado (Áudio 08)</span> :
-                                             lead.STATUS_CADASTRO === 'ATUALIZADO' ? <span className="text-purple-600 font-black"><i className="fas fa-sync-alt mr-1"></i> Finalizado! Fatura Atualizada.</span> :
-                                             <span className="text-slate-500 font-bold">{lead.STATUS_CADASTRO}</span>}
-                                        </td>
-                                        <td className="p-3 text-center">
-                                            {lead.IS_ATUALIZACAO ? 
-                                                <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-[9px] font-black uppercase">Via Rápida (Atualização)</span> : 
-                                                <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[9px] font-black uppercase">Fluxo Normal (Novo)</span>
-                                            }
-                                        </td>
+                                        <td className="p-3 text-center">{lead.LINK_FATURA ? <a href={lead.LINK_FATURA} target="_blank" className="text-blue-500 hover:text-blue-700"><i className="fas fa-file-pdf"></i></a> : "-"}</td>
+                                        <td className="p-3 text-center">{lead.LINK_DOC_FRENTE ? <a href={lead.LINK_DOC_FRENTE} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card"></i></a> : "-"}</td>
+                                        <td className="p-3 text-center">{lead.LINK_DOC_VERSO ? <a href={lead.LINK_DOC_VERSO} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card"></i></a> : "-"}</td>
                                     </tr>
                                 ))
                             )}
@@ -278,7 +161,6 @@
 
             return (
                 <div className="min-h-screen p-4 md:p-8 relative">
-                    {/* MODAL DE DELETAR */}
                     {leadToDelete && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
                             <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 border border-slate-200">
@@ -293,7 +175,7 @@
                                 </div>
                                 <div className="flex justify-end space-x-3">
                                     <button onClick={() => setLeadToDelete(null)} className="px-6 py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Cancelar</button>
-                                    <button onClick={handleDeleteConfirm} className="px-6 py-3 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 transition-all flex items-center"><i className="fas fa-trash-alt mr-2"></i> Sim, Apagar Dados</button>
+                                    <button onClick={handleDeleteConfirm} className="px-6 py-3 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 transition-all"><i className="fas fa-trash-alt mr-2"></i> Apagar</button>
                                 </div>
                             </div>
                         </div>
@@ -319,17 +201,8 @@
                         </div>
                     </header>
 
-                    {/* BOTÕES DAS ABAS */}
-                    <div className="max-w-[1800px] mx-auto mb-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        <button onClick={() => setActiveTab('AUDITORIA_IGREEN')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === 'AUDITORIA_IGREEN' ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'}`}><i className="fas fa-table"></i> AUDITORIA IGREEN</button>
-                        <button onClick={() => setActiveTab('FILA_RPA_IGREEN')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === 'FILA_RPA_IGREEN' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'}`}><i className="fas fa-robot"></i> FILA RPA IGREEN</button>
-                        <button onClick={() => setActiveTab('HISTORICO_VOZ')} className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === 'HISTORICO_VOZ' ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'}`}><i className="fas fa-microphone-alt"></i> HISTÓRICO VOZ</button>
-                    </div>
-
                     <main className="max-w-[1800px] mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
                         {activeTab === 'AUDITORIA_IGREEN' && renderAuditoria()}
-                        {activeTab === 'FILA_RPA_IGREEN' && renderFilaRPA()}
-                        {activeTab === 'HISTORICO_VOZ' && renderHistoricoVoz()}
                     </main>
                 </div>
             );

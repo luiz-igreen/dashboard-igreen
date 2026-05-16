@@ -88,12 +88,18 @@
 
             const leadsReais = leads.filter(l => !String(l.id || l.TELEFONE || "").toLowerCase().includes("group"));
             
+            // Ignora o traço na hora de criar os botões das abas
             const uniqueDonos = useMemo(() => {
-                const donos = leadsReais.map(l => l.DONO_REDE).filter(Boolean);
+                const donos = leadsReais.map(l => l.DONO_REDE).filter(d => d && d !== '-');
                 return [...new Set(donos)].sort();
             }, [leadsReais]);
 
-            const filtradosTab = leadsReais.filter(l => activeTab === 'TODOS' || l.DONO_REDE === activeTab);
+            // 🔥 O PODER DO MESTRE: Aba 76049 puxa também os manuais/sem dono
+            const filtradosTab = leadsReais.filter(l => {
+                if (activeTab === 'TODOS') return true;
+                if (activeTab === '76049') return l.DONO_REDE === '76049' || !l.DONO_REDE || l.DONO_REDE === '-';
+                return l.DONO_REDE === activeTab;
+            });
             
             const filtradosBusca = filtradosTab.filter(l => {
                 return (l.NOME_CLIENTE || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -261,4 +267,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>
+</html>    

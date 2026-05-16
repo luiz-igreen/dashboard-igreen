@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iGreen AutoFlow - Dashboard Oficial</title>
+    <title>iGreen AutoFlow - Dashboard Multi-Nível</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,7 +28,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
 
         const firebaseConfig = {
           apiKey: "AIzaSyB4bGHVNgOMFJmyKhHJVLScsmr1tWy2uhQ",
@@ -49,6 +49,7 @@
             const [loading, setLoading] = useState(true);
             const [searchTerm, setSearchTerm] = useState("");
             const [leadToDelete, setLeadToDelete] = useState(null);
+            const [activeTab, setActiveTab] = useState('TODOS'); 
 
             useEffect(() => {
                 auth.signInAnonymously().catch(console.error);
@@ -86,14 +87,22 @@
             };
 
             const leadsReais = leads.filter(l => !String(l.id || l.TELEFONE || "").toLowerCase().includes("group"));
-            const totalGeral = leadsReais.length;
-            const totalCompletos = leadsReais.filter(l => l.LINK_FATURA && l.LINK_DOC_FRENTE && l.STATUS_CADASTRO !== 'INATIVO').length;
-            const totalPendentes = totalGeral - totalCompletos;
+            
+            const uniqueDonos = useMemo(() => {
+                const donos = leadsReais.map(l => l.DONO_REDE).filter(Boolean);
+                return [...new Set(donos)].sort();
+            }, [leadsReais]);
 
-            const filtrados = leadsReais.filter(l => {
+            const filtradosTab = leadsReais.filter(l => activeTab === 'TODOS' || l.DONO_REDE === activeTab);
+            
+            const filtradosBusca = filtradosTab.filter(l => {
                 return (l.NOME_CLIENTE || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
                 (l.TELEFONE || "").includes(searchTerm) || (l.UC || "").includes(searchTerm) || (l.CODIGO_CLIENTE || "").includes(searchTerm)
             });
+
+            const totalGeral = filtradosTab.length;
+            const totalCompletos = filtradosTab.filter(l => l.LINK_FATURA && l.LINK_DOC_FRENTE && l.STATUS_CADASTRO !== 'INATIVO').length;
+            const totalPendentes = totalGeral - totalCompletos;
 
             return (
                 <div className="min-h-screen p-4 md:p-8 relative">
@@ -119,12 +128,12 @@
 
                     <header className="max-w-[1800px] mx-auto flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                            <div className="bg-emerald-600 p-3 rounded-xl shadow-lg shadow-emerald-200 text-white"><i className="fas fa-database text-xl"></i></div>
+                            <div className="bg-emerald-600 p-3 rounded-xl shadow-lg shadow-emerald-200 text-white"><i className="fas fa-sitemap text-xl"></i></div>
                             <div>
                                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">Cloud Database <span className="text-emerald-600">iGreen AutoFlow</span></h1>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center mt-1">
                                     <i className="fas fa-circle text-emerald-500 mr-2 animate-pulse" style={{fontSize: '8px'}}></i>
-                                    PAINEL DO LICENCIADO
+                                    GESTÃO MULTI-NÍVEL (REDE)
                                 </p>
                             </div>
                         </div>
@@ -137,13 +146,27 @@
                         </div>
                     </header>
 
+                    <div className="max-w-[1800px] mx-auto flex space-x-2 mb-4 overflow-x-auto pb-2">
+                        <button onClick={() => setActiveTab('TODOS')} className={`px-5 py-2 rounded-xl font-bold text-xs shadow-sm transition-all whitespace-nowrap ${activeTab === 'TODOS' ? 'bg-slate-800 text-white shadow-slate-300' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                            <i className="fas fa-globe mr-2"></i> VISÃO GERAL (Todos)
+                        </button>
+                        <button onClick={() => setActiveTab('76049')} className={`px-5 py-2 rounded-xl font-bold text-xs shadow-sm transition-all whitespace-nowrap ${activeTab === '76049' ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                            <i className="fas fa-crown mr-2 text-amber-300"></i> MEUS DIRETOS (76.049)
+                        </button>
+                        {uniqueDonos.filter(d => d !== '76049' && d !== '76.049' && d).map(dono => (
+                            <button key={dono} onClick={() => setActiveTab(dono)} className={`px-5 py-2 rounded-xl font-bold text-xs shadow-sm transition-all whitespace-nowrap ${activeTab === dono ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
+                                <i className="fas fa-users mr-2"></i> EQUIPE ({dono})
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total de Cadastros</p>
                                 <h2 className="text-4xl font-black text-slate-800">{loading ? "-" : totalGeral}</h2>
                             </div>
-                            <div className="bg-slate-50 text-slate-400 p-4 rounded-xl text-2xl"><i className="fas fa-users"></i></div>
+                            <div className="bg-slate-50 text-slate-400 p-4 rounded-xl text-2xl"><i className="fas fa-chart-line"></i></div>
                         </div>
 
                         <div className="bg-white rounded-2xl p-6 border border-emerald-200 shadow-sm flex items-center justify-between">
@@ -176,11 +199,12 @@
                                         <th className="p-3">DATA_NASCIMENTO</th>
                                         <th className="p-3">CPF</th>
                                         <th className="p-3">TELEFONE</th>
+                                        <th className="p-3 text-indigo-700 bg-indigo-50 border-l border-indigo-100">DONO_REDE</th>
+                                        <th className="p-3 text-center bg-blue-50 text-blue-800 border-l border-blue-100">CONTA_MES</th>
+                                        <th className="p-3 text-center bg-red-50 text-red-800 border-r border-red-100">VENCIMENTO</th>
                                         <th className="p-3">EMAIL</th>
                                         <th className="p-3">CEP</th>
                                         <th className="p-3">UC</th>
-                                        <th className="p-3 text-center bg-blue-50 text-blue-800 border-l border-blue-100">CONTA_MES</th>
-                                        <th className="p-3 text-center bg-red-50 text-red-800 border-r border-red-100">VENCIMENTO</th>
                                         <th className="p-3 text-center">MEDIA_CONSUMO</th>
                                         <th className="p-3 text-center">LINK_FATURA</th>
                                         <th className="p-3 text-center">DOC_FRENTE</th>
@@ -189,11 +213,11 @@
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {loading ? (
-                                        <tr><td colSpan="17" className="p-8 text-center font-bold text-emerald-600"><i className="fas fa-spinner fa-spin mr-2"></i> Carregando dados reais...</td></tr>
-                                    ) : filtrados.length === 0 ? (
-                                        <tr><td colSpan="17" className="p-8 text-center text-slate-400">Nenhum dado encontrado no banco.</td></tr>
+                                        <tr><td colSpan="18" className="p-8 text-center font-bold text-emerald-600"><i className="fas fa-spinner fa-spin mr-2"></i> Inicializando Sistema Multi-Nível...</td></tr>
+                                    ) : filtradosBusca.length === 0 ? (
+                                        <tr><td colSpan="18" className="p-8 text-center text-slate-400">Nenhum dado encontrado para esta seleção.</td></tr>
                                     ) : (
-                                        filtrados.map((lead) => (
+                                        filtradosBusca.map((lead) => (
                                             <tr key={lead.id} className={`hover:bg-emerald-50 text-[11px] text-slate-700 ${lead.STATUS_CADASTRO === 'INATIVO' ? 'bg-slate-50 opacity-70' : 'bg-white'}`}>
                                                 <td className="p-3 sticky left-0 shadow-[1px_0_0_#f1f5f9] text-center" style={{ backgroundColor: 'inherit' }}>
                                                     <button onClick={() => setLeadToDelete(lead)} className="text-red-500 hover:text-white bg-red-50 hover:bg-red-500 p-2 rounded-lg transition-colors shadow-sm" title="Excluir Definitivamente"><i className="fas fa-trash-alt"></i></button>
@@ -212,11 +236,12 @@
                                                 <td className="p-3 font-mono font-bold text-slate-600">{lead.DATA_NASCIMENTO || "-"}</td>
                                                 <td className="p-3 font-mono text-slate-600">{lead.CPF || "-"}</td>
                                                 <td className="p-3 font-mono text-blue-600">{lead.TELEFONE || lead.telefone || "-"}</td>
+                                                <td className="p-3 font-bold text-indigo-700 bg-indigo-50/50"><i className="fas fa-id-badge mr-1 opacity-50"></i> {lead.DONO_REDE || "-"}</td>
+                                                <td className="p-3 text-center font-bold text-blue-700 bg-blue-50/30 uppercase">{lead.CONTA_MES || "-"}</td>
+                                                <td className="p-3 text-center font-bold text-red-600 bg-red-50/30">{lead.VENCIMENTO || "-"}</td>
                                                 <td className="p-3 font-bold text-blue-600 text-[10px]">{lead.EMAIL || "-"}</td>
                                                 <td className="p-3 font-mono text-slate-500">{lead.CEP || "-"}</td>
                                                 <td className="p-3 font-bold text-indigo-600">{lead.UC || "-"}</td>
-                                                <td className="p-3 text-center font-bold text-blue-700 bg-blue-50/30 uppercase">{lead.CONTA_MES || "-"}</td>
-                                                <td className="p-3 text-center font-bold text-red-600 bg-red-50/30">{lead.VENCIMENTO || "-"}</td>
                                                 <td className="p-3 text-center font-black text-emerald-600 text-sm bg-emerald-50">{lead.MEDIA_CONSUMO || "0"}</td>
                                                 <td className="p-3 text-center">{lead.LINK_FATURA ? <a href={lead.LINK_FATURA} target="_blank" className="text-blue-500 hover:text-blue-700"><i className="fas fa-file-pdf text-lg"></i></a> : "-"}</td>
                                                 <td className="p-3 text-center">{lead.LINK_DOC_FRENTE ? <a href={lead.LINK_DOC_FRENTE} target="_blank" className="text-orange-500 hover:text-orange-700"><i className="fas fa-id-card text-lg"></i></a> : "-"}</td>
@@ -236,4 +261,4 @@
         root.render(<App />);
     </script>
 </body>
-</html>    
+</html>
